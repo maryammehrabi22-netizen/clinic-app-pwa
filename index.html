@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="کلینیک">
+  <link rel="apple-touch-icon" href="icon.png">
+  <link rel="manifest" href="manifest.json">
+  <title>سامانه مدیریت کلینیک</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap');
+
+    :root {
+      --primary: #1a6b5a;
+      --primary-light: #228e76;
+      --primary-dark: #12503f;
+      --accent: #f0a500;
+      --accent-light: #ffc32b;
+      --bg: #f4f7f6;
+      --surface: #ffffff;
+      --surface2: #eef3f1;
+      --text: #1c2b27;
+      --text-muted: #6b8c82;
+      --border: #d0e0da;
+      --danger: #d94f4f;
+      --success: #2ecc71;
+      --warning: #f39c12;
+      --info: #2980b9;
+      --shadow: 0 2px 12px rgba(26,107,90,0.10);
+      --shadow-lg: 0 8px 32px rgba(26,107,90,0.14);
+      --radius: 14px;
+      --radius-sm: 8px;
+      --nav-h: 64px;
+      --statusbar-h: env(safe-area-inset-top, 0px);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    html, body {
+      height: 100%;
+      font-family: 'Vazirmatn', Tahoma, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow: hidden;
+    }
+
+    #app { display: flex; flex-direction: column; height: 100vh; height: -webkit-fill-available; }
+
+    #topbar {
+      background: var(--primary);
+      color: #fff;
+      padding: calc(var(--statusbar-h) + 12px) 16px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      z-index: 100;
+    }
+    #topbar h1 { font-size: 1.1rem; font-weight: 700; }
+    #topbar .subtitle { font-size: 0.72rem; opacity: 0.8; margin-top: 1px; }
+    .topbar-icon { width: 38px; height: 38px; background: rgba(255,255,255,0.15); border-radius: 50%; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+    .topbar-icon svg { width: 20px; height: 20px; fill: #fff; }
+
+    #content {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: calc(var(--nav-h) + 16px + env(safe-area-inset-bottom, 0px));
+    }
+
+    #bottom-nav {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px));
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: flex;
+      z-index: 200;
+      box-shadow: 0 -2px 12px rgba(0,0,0,0.07);
+    }
+    .nav-item {
+      flex: 1; display: flex; flex-direction: column; align-items: center;
+      justify-content: center; gap: 3px; cursor: pointer;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+      transition: background 0.15s;
+    }
+    .nav-item:active { background: var(--surface2); }
+    .nav-item svg { width: 22px; height: 22px; fill: var(--text-muted); transition: fill 0.2s; }
+    .nav-item span { font-size: 0.65rem; color: var(--text-muted); transition: color 0.2s; font-weight: 500; }
+    .nav-item.active svg { fill: var(--primary); }
+    .nav-item.active span { color: var(--primary); font-weight: 700; }
+
+    .section { display: none; padding: 16px; }
+    .section.active { display: block; }
+
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+    .stat-card {
+      background: var(--surface); border-radius: var(--radius); padding: 16px;
+      box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 6px;
+      position: relative; overflow: hidden;
+    }
+    .stat-card::before {
+      content: ''; position: absolute; top: 0; right: 0;
+      width: 4px; height: 100%; border-radius: 0 var(--radius) var(--radius) 0;
+    }
+    .stat-card.green::before { background: var(--success); }
+    .stat-card.blue::before { background: var(--info); }
+    .stat-card.orange::before { background: var(--warning); }
+    .stat-card.red::before { background: var(--danger); }
+    .stat-label { font-size: 0.72rem; color: var(--text-muted); font-weight: 500; }
+    .stat-value { font-size: 1.7rem; font-weight: 700; color: var(--text); }
+    .stat-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); opacity: 0.08; }
+    .stat-icon svg { width: 42px; height: 42px; fill: var(--text); }
+
+    .section-title {
+      font-size: 0.92rem; font-weight: 700; color: var(--text);
+      margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
+    }
+    .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+    .appointment-list { display: flex; flex-direction: column; gap: 10px; }
+    .appt-card {
+      background: var(--surface); border-radius: var(--radius); padding: 14px;
+      box-shadow: var(--shadow); display: flex; align-items: center; gap: 12px;
+    }
+    .appt-time {
+      background: var(--surface2); border-radius: var(--radius-sm);
+      padding: 8px 10px; text-align: center; min-width: 56px;
+    }
+    .appt-time .time { font-size: 1rem; font-weight: 700; color: var(--primary); }
+    .appt-info { flex: 1; }
+    .appt-name { font-size: 0.92rem; font-weight: 600; }
+    .appt-doctor { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+    .badge { font-size: 0.65rem; font-weight: 600; padding: 3px 8px; border-radius: 20px; white-space: nowrap; }
+    .badge-green { background: #d4f5e3; color: #1a7a47; }
+    .badge-orange { background: #fff0d0; color: #a06a00; }
+    .badge-blue { background: #d0e8ff; color: #1a5fa0; }
+    .badge-red { background: #ffe0e0; color: #b03030; }
+
+    .search-bar {
+      background: var(--surface); border-radius: var(--radius);
+      padding: 10px 14px; display: flex; align-items: center; gap: 10px;
+      box-shadow: var(--shadow); margin-bottom: 14px;
+    }
+    .search-bar svg { width: 18px; height: 18px; fill: var(--text-muted); flex-shrink: 0; }
+    .search-bar input {
+      flex: 1; border: none; outline: none; background: transparent;
+      font-family: inherit; font-size: 0.88rem; color: var(--text); text-align: right;
+    }
+    .search-bar input::placeholder { color: var(--text-muted); }
+
+    .patient-list { display: flex; flex-direction: column; gap: 10px; }
+    .patient-card {
+      background: var(--surface); border-radius: var(--radius); padding: 14px;
+      box-shadow: var(--shadow); display: flex; align-items: center; gap: 12px;
+    }
+    .avatar {
+      width: 44px; height: 44px; border-radius: 50%;
+      background: var(--primary-light); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem; font-weight: 700; flex-shrink: 0;
+    }
+    .patient-info { flex: 1; }
+    .patient-name { font-size: 0.92rem; font-weight: 600; }
+    .patient-meta { font-size: 0.73rem; color: var(--text-muted); margin-top: 2px; }
+    .patient-action svg { width: 20px; height: 20px; fill: var(--primary); }
+
+    .filter-bar {
+      display: flex; gap: 8px; overflow-x: auto; margin-bottom: 14px;
+      padding-bottom: 4px; scrollbar-width: none;
+    }
+    .filter-bar::-webkit-scrollbar { display: none; }
+    .filter-btn {
+      flex-shrink: 0; padding: 6px 14px; border-radius: 20px;
+      border: 1.5px solid var(--border); background: var(--surface);
+      font-family: inherit; font-size: 0.77rem; font-weight: 600;
+      color: var(--text-muted); cursor: pointer; transition: all 0.15s;
+    }
+    .filter-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+    .rx-card { background: var(--surface); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); margin-bottom: 10px; }
+    .rx-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; }
+    .rx-patient { font-size: 0.92rem; font-weight: 700; }
+    .rx-date { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; }
+    .rx-doctor { font-size: 0.75rem; color: var(--primary); font-weight: 600; }
+    .drug-list { border-top: 1px solid var(--border); padding-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+    .drug-item { display: flex; justify-content: space-between; align-items: center; }
+    .drug-name { font-size: 0.83rem; font-weight: 600; }
+    .drug-dose { font-size: 0.75rem; color: var(--text-muted); }
+
+    .fab {
+      position: fixed; left: 20px;
+      bottom: calc(var(--nav-h) + 16px + env(safe-area-inset-bottom, 0px));
+      width: 52px; height: 52px; border-radius: 50%;
+      background: var(--accent); color: #fff; border: none;
+      box-shadow: 0 4px 16px rgba(240,165,0,0.45);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; z-index: 150; transition: transform 0.15s;
+    }
+    .fab:active { transform: scale(0.93); }
+    .fab svg { width: 26px; height: 26px; fill: #fff; }
+
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+      z-index: 300; display: none; align-items: flex-end; justify-content: center;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      background: var(--surface); border-radius: var(--radius) var(--radius) 0 0;
+      width: 100%; max-width: 480px;
+      padding: 20px 20px calc(20px + env(safe-area-inset-bottom, 0px));
+      max-height: 85vh; overflow-y: auto;
+      animation: slideUp 0.25s ease;
+    }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    .modal-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 16px; }
+    .modal-title { font-size: 1rem; font-weight: 700; margin-bottom: 18px; }
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--text-muted); margin-bottom: 5px; }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%; padding: 10px 12px; border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm); font-family: inherit; font-size: 0.88rem;
+      color: var(--text); background: var(--bg); outline: none; text-align: right;
+      transition: border-color 0.15s;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--primary); }
+    .form-group textarea { resize: none; height: 80px; }
+    .btn-row { display: flex; gap: 10px; margin-top: 4px; }
+    .btn {
+      flex: 1; padding: 12px; border-radius: var(--radius-sm); border: none;
+      font-family: inherit; font-size: 0.88rem; font-weight: 700; cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    .btn:active { opacity: 0.85; transform: scale(0.97); }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-secondary { background: var(--surface2); color: var(--text); }
+
+    #toast {
+      position: fixed;
+      bottom: calc(var(--nav-h) + 20px + env(safe-area-inset-bottom, 0px));
+      right: 50%; transform: translateX(50%);
+      background: var(--text); color: #fff;
+      padding: 10px 20px; border-radius: 24px;
+      font-size: 0.82rem; font-weight: 600;
+      z-index: 500; opacity: 0; transition: opacity 0.25s;
+      pointer-events: none; white-space: nowrap;
+    }
+    #toast.show { opacity: 1; }
+    #content::-webkit-scrollbar { width: 0; }
+  </style>
+</head>
+<body>
+<div id="app">
+  <div id="topbar">
+    <div>
+      <h1>سامانه مدیریت کلینیک</h1>
+      <div class="subtitle" id="today-date"></div>
+    </div>
+    <div class="topbar-icon" onclick="showToast('اعلان‌ها')">
+      <svg viewBox="0 0 24 24"><path d="M12 22a2 2 0 0 0 2-2H10a2 2 0 0 0 2 2zm6-6V11a6 6 0 0 0-5-5.91V4a1 1 0 0 0-2 0v1.09A6 6 0 0 0 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+    </div>
+  </div>
+
+  <div id="content">
+    <div class="section active" id="sec-dashboard">
+      <div class="stats-grid">
+        <div class="stat-card green">
+          <div class="stat-label">بیماران امروز</div>
+          <div class="stat-value" id="stat-today">0</div>
+          <div class="stat-icon"><svg viewBox="0 0 24 24"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg></div>
+        </div>
+        <div class="stat-card blue">
+          <div class="stat-label">کل بیماران</div>
+          <div class="stat-value" id="stat-patients">0</div>
+          <div class="stat-icon"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg></div>
+        </div>
+        <div class="stat-card orange">
+          <div class="stat-label">نوبت‌های باز</div>
+          <div class="stat-value" id="stat-open">0</div>
+          <div class="stat-icon"><svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/></svg></div>
+        </div>
+        <div class="stat-card red">
+          <div class="stat-label">نسخه‌های امروز</div>
+          <div class="stat-value" id="stat-rx">0</div>
+          <div class="stat-icon"><svg viewBox="0 0 24 24"><path d="M20 3H4v10c0 2.21 1.79 4 4 4h6c2.21 0 4-1.79 4-4v-3h2c1.11 0 2-.89 2-2V5c0-1.11-.89-2-2-2zm0 5h-2V5h2v3zM4 19h16v2H4z"/></svg></div>
+        </div>
+      </div>
+      <div class="section-title">نوبت‌های امروز</div>
+      <div class="appointment-list" id="today-appts"></div>
+    </div>
+
+    <div class="section" id="sec-patients">
+      <div class="search-bar">
+        <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+        <input type="text" id="patient-search" placeholder="جستجوی بیمار..." oninput="filterPatients(this.value)">
+      </div>
+      <div class="patient-list" id="patient-list"></div>
+    </div>
+
+    <div class="section" id="sec-appointments">
+      <div class="filter-bar">
+        <button class="filter-btn active" onclick="filterAppts('all',this)">همه</button>
+        <button class="filter-btn" onclick="filterAppts('waiting',this)">در انتظار</button>
+        <button class="filter-btn" onclick="filterAppts('confirmed',this)">تأیید شده</button>
+        <button class="filter-btn" onclick="filterAppts('done',this)">انجام شده</button>
+        <button class="filter-btn" onclick="filterAppts('cancelled',this)">لغو شده</button>
+      </div>
+      <div class="appointment-list" id="all-appts"></div>
+    </div>
+
+    <div class="section" id="sec-rx">
+      <div id="rx-list"></div>
+    </div>
+  </div>
+
+  <nav id="bottom-nav">
+    <div class="nav-item active" onclick="navigate('dashboard',this)">
+      <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+      <span>داشبورد</span>
+    </div>
+    <div class="nav-item" onclick="navigate('patients',this)">
+      <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+      <span>بیماران</span>
+    </div>
+    <div class="nav-item" onclick="navigate('appointments',this)">
+      <svg viewBox="0 0 24 24"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg>
+      <span>نوبت‌ها</span>
+    </div>
+    <div class="nav-item" onclick="navigate('rx',this)">
+      <svg viewBox="0 0 24 24"><path d="M20 3H4v10c0 2.21 1.79 4 4 4h6c2.21 0 4-1.79 4-4v-3h2c1.11 0 2-.89 2-2V5c0-1.11-.89-2-2-2zm0 5h-2V5h2v3zM4 19h16v2H4z"/></svg>
+      <span>نسخه‌ها</span>
+    </div>
+  </nav>
+
+  <button class="fab" onclick="openModal()">
+    <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+  </button>
+</div>
+
+<div class="modal-backdrop" id="modal-backdrop" onclick="closeModalOutside(event)">
+  <div class="modal" id="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">افزودن نوبت جدید</div>
+    <div class="form-group"><label>نام بیمار</label><input type="text" id="f-name" placeholder="نام و نام خانوادگی"></div>
+    <div class="form-group">
+      <label>پزشک</label>
+      <select id="f-doctor">
+        <option value="دکتر احمدی">دکتر احمدی — عمومی</option>
+        <option value="دکتر رضایی">دکتر رضایی — متخصص داخلی</option>
+        <option value="دکتر کریمی">دکتر کریمی — اطفال</option>
+        <option value="دکتر نوری">دکتر نوری — قلب و عروق</option>
+      </select>
+    </div>
+    <div class="form-group"><label>ساعت نوبت</label><input type="time" id="f-time" value="09:00"></div>
+    <div class="form-group"><label>تاریخ</label><input type="date" id="f-date"></div>
+    <div class="form-group"><label>یادداشت</label><textarea id="f-note" placeholder="شرح علائم یا توضیحات..."></textarea></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="addAppointment()">ثبت نوبت</button>
+      <button class="btn btn-secondary" onclick="closeModal()">انصراف</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+let patients = [
+  { id:1, name:'علی محمدی', age:34, phone:'09121234567', lastVisit:'۱۴۰۴/۰۱/۲۰', blood:'A+' },
+  { id:2, name:'فاطمه احمدی', age:28, phone:'09351234567', lastVisit:'۱۴۰۴/۰۱/۱۸', blood:'O-' },
+  { id:3, name:'حسن رضایی', age:52, phone:'09171234567', lastVisit:'۱۴۰۴/۰۱/۱۵', blood:'B+' },
+  { id:4, name:'مریم کریمی', age:41, phone:'09301234567', lastVisit:'۱۴۰۴/۰۱/۱۰', blood:'AB+' },
+  { id:5, name:'رضا نوری', age:19, phone:'09221234567', lastVisit:'۱۴۰۴/۰۱/۰۵', blood:'A-' },
+  { id:6, name:'زهرا قاسمی', age:63, phone:'09101234567', lastVisit:'۱۴۰۴/۰۱/۰۱', blood:'O+' },
+];
+let appointments = [
+  { id:1, patient:'علی محمدی', doctor:'دکتر احمدی', time:'08:30', date: todayStr(), status:'confirmed', note:'' },
+  { id:2, patient:'فاطمه احمدی', doctor:'دکتر رضایی', time:'09:15', date: todayStr(), status:'waiting', note:'سردرد شدید' },
+  { id:3, patient:'حسن رضایی', doctor:'دکتر کریمی', time:'10:00', date: todayStr(), status:'done', note:'' },
+  { id:4, patient:'مریم کریمی', doctor:'دکتر نوری', time:'11:30', date: todayStr(), status:'waiting', note:'کنترل فشار خون' },
+  { id:5, patient:'رضا نوری', doctor:'دکتر احمدی', time:'14:00', date: todayStr(), status:'cancelled', note:'' },
+];
+let prescriptions = [
+  { id:1, patient:'علی محمدی', doctor:'دکتر احمدی', date:'۱۴۰۴/۰۱/۲۳', drugs:[{name:'آموکسی‌سیلین ۵۰۰mg',dose:'۳ بار در روز - ۷ روز'},{name:'ایبوپروفن ۴۰۰mg',dose:'در صورت درد'}]},
+  { id:2, patient:'فاطمه احمدی', doctor:'دکتر رضایی', date:'۱۴۰۴/۰۱/۲۳', drugs:[{name:'متفورمین ۵۰۰mg',dose:'۲ بار در روز'},{name:'آتورواستاتین ۱۰mg',dose:'شبانه'},{name:'آسپرین ۸۱mg',dose:'روزانه'}]},
+  { id:3, patient:'مریم کریمی', doctor:'دکتر نوری', date:'۱۴۰۴/۰۱/۲۰', drugs:[{name:'آملودیپین ۵mg',dose:'روزانه صبح'},{name:'لوزارتان ۵۰mg',dose:'روزانه'}]},
+];
+function todayStr(){const d=new Date();return d.toISOString().split('T')[0];}
+function getPersianDate(){try{return new Intl.DateTimeFormat('fa-IR',{weekday:'long',year:'numeric',month:'long',day:'numeric'}).format(new Date());}catch(e){return '';}}
+function navigate(sec,el){document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));document.getElementById('sec-'+sec).classList.add('active');el.classList.add('active');renderSection(sec);}
+function renderSection(sec){if(sec==='dashboard')renderDashboard();else if(sec==='patients')renderPatients(patients);else if(sec==='appointments')renderAllAppts('all');else if(sec==='rx')renderRx();}
+function renderDashboard(){
+  const today=todayStr();const todayAppts=appointments.filter(a=>a.date===today);
+  document.getElementById('stat-today').textContent=todayAppts.length;
+  document.getElementById('stat-patients').textContent=patients.length;
+  document.getElementById('stat-open').textContent=appointments.filter(a=>a.status==='waiting').length;
+  document.getElementById('stat-rx').textContent=prescriptions.length;
+  const container=document.getElementById('today-appts');
+  container.innerHTML=todayAppts.length?todayAppts.map(a=>apptCardHTML(a)).join(''):'<p style="color:var(--text-muted);font-size:.85rem;text-align:center;padding:20px">نوبتی برای امروز ثبت نشده</p>';
+}
+const statusMap={waiting:{label:'در انتظار',cls:'badge-orange'},confirmed:{label:'تأیید شده',cls:'badge-blue'},done:{label:'انجام شده',cls:'badge-green'},cancelled:{label:'لغو شده',cls:'badge-red'}};
+function apptCardHTML(a){const s=statusMap[a.status]||statusMap.waiting;const[h,m]=a.time.split(':');return`<div class="appt-card"><div class="appt-time"><div class="time">${h}:${m}</div></div><div class="appt-info"><div class="appt-name">${a.patient}</div><div class="appt-doctor">${a.doctor}${a.note?' · '+a.note:''}</div></div><span class="badge ${s.cls}">${s.label}</span></div>`;}
+function renderPatients(list){document.getElementById('patient-list').innerHTML=list.map(p=>`<div class="patient-card"><div class="avatar">${p.name[0]}</div><div class="patient-info"><div class="patient-name">${p.name}</div><div class="patient-meta">سن: ${p.age} · گروه خونی: ${p.blood} · آخرین ویزیت: ${p.lastVisit}</div></div><div class="patient-action"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div></div>`).join('');}
+function filterPatients(q){renderPatients(patients.filter(p=>p.name.includes(q)||p.phone.includes(q)));}
+function filterAppts(filter,btn){document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderAllAppts(filter);}
+function renderAllAppts(filter){const list=filter==='all'?appointments:appointments.filter(a=>a.status===filter);const container=document.getElementById('all-appts');container.innerHTML=list.length?list.map(a=>apptCardHTML(a)).join(''):'<p style="color:var(--text-muted);font-size:.85rem;text-align:center;padding:20px">نوبتی یافت نشد</p>';}
+function renderRx(){document.getElementById('rx-list').innerHTML=prescriptions.map(rx=>`<div class="rx-card"><div class="rx-header"><div><div class="rx-patient">${rx.patient}</div><div class="rx-date">${rx.date}</div></div><div class="rx-doctor">${rx.doctor}</div></div><div class="drug-list">${rx.drugs.map(d=>`<div class="drug-item"><div class="drug-name">${d.name}</div><div class="drug-dose">${d.dose}</div></div>`).join('')}</div></div>`).join('');}
+function openModal(){document.getElementById('modal-backdrop').classList.add('open');document.getElementById('f-date').value=todayStr();}
+function closeModal(){document.getElementById('modal-backdrop').classList.remove('open');}
+function closeModalOutside(e){if(e.target===document.getElementById('modal-backdrop'))closeModal();}
+function addAppointment(){
+  const name=document.getElementById('f-name').value.trim();
+  const doctor=document.getElementById('f-doctor').value;
+  const time=document.getElementById('f-time').value;
+  const date=document.getElementById('f-date').value;
+  const note=document.getElementById('f-note').value.trim();
+  if(!name){showToast('لطفاً نام بیمار را وارد کنید');return;}
+  appointments.unshift({id:Date.now(),patient:name,doctor,time,date,status:'waiting',note});
+  if(!patients.find(p=>p.name===name))patients.unshift({id:Date.now(),name,age:'—',phone:'—',lastVisit:'—',blood:'—'});
+  closeModal();showToast('نوبت با موفقیت ثبت شد ✓');
+  document.getElementById('f-name').value='';document.getElementById('f-note').value='';
+  renderDashboard();
+}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+document.getElementById('today-date').textContent=getPersianDate();
+renderDashboard();
+</script>
+<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'));}</script>
+</body>
+</html>
